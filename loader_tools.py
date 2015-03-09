@@ -2,13 +2,61 @@
 import jython_grouper
 from edu.internet2.middleware.grouper.app.loader.ldap import LoaderLdapUtils
 from edu.internet2.middleware.grouper.app.loader import GrouperLoader
+from edu.internet2.middleware.grouper import GroupTypeFinder       
+
+def connect_group_to_sql_source(session, group_name, db_id, query, **kwds):
+    """
+    :param `session`: A Grouper session.
+    :param `group_name`: A grouper group name.
+    :param `db_id`: The database identifier from `grouper-loader.properties`.
+    :param `query`: SQL query with result columns `subject_id` and `subject_source_id`. 
+    :param `cron`: Optional Quartz cron schedule.  Default: '0 0 0 * * ?'.
+
+    Returns the Grouper group that was connected to the SQL source.
+    """
+    cron = kwds.get("cron", "0 0 0 * * ?")
+    g = jython_grouper.getGroup(session, group_name)
+    t = GroupTypeFinder.find("grouperLoader", True)
+    g.addType(t)
+    g.setAttribute("grouperLoaderDbName", db_id)
+    g.setAttribute("grouperLoaderQuartzCron", cron)
+    g.setAttribute("grouperLoaderQuery", query)
+    g.setAttribute("grouperLoaderScheduleType", "CRON")                                            
+    g.setAttribute("grouperLoaderType", "SQL_SIMPLE")  
+    return g
+
+def edit_group_sql_source(session, group_name, **kwds):
+    """
+    Edit the properties of a SQL connected group.
+
+    :param `session`: A Grouper session.
+    :param `group_name`: A grouper group name.
+    :param `db_id`: Optional.  The database identifier from `grouper-loader.properties`.
+    :param `query`: Optional.  SQL query with result columns `subject_id` and `subject_source_id`. 
+    :param `cron`:  Optional Quartz cron schedule.
+    """
+    cron = kwds.get("cron", None)
+    db_id = kwds.get("db_id", None)
+    query = kwds.get("query", None)
+    g = jython_grouper.getGroup(session, group_name)
+    if db_id is not None:
+        g.setAttribute("grouperLoaderDbName", db_id)
+    if cron is not None:
+        g.setAttribute("grouperLoaderQuartzCron", cron)
+    if query is not None:
+        g.setAttribute("grouperLoaderQuery", query)
+    return g
 
 def connect_group_to_ldap_source(session, group_name, ldap_base_dn, ldap_group_filter, **kwds):
     """
-    :param:`session`: A Grouper session.
-    :param:`group_name`: A grouper group name.
-    :param:`ldap_base_dn`: The base DN from which to search for the LDAP group.
-    :param:`ldap_group_filter`: An LDAP filter that will result in a single group being returned. 
+    :param `session`: A Grouper session.
+    :param `group_name`: A grouper group name.
+    :param `ldap_base_dn`: The base DN from which to search for the LDAP group.
+    :param `ldap_group_filter`: An LDAP filter that will result in a single group being returned. 
+    :param `cron`: Optional Quartz cron schedule.  Default: '0 0 0 * * ?'.
+    :param `server_id`: Optional LDAP server ID.  Default: 'personLdap'.
+    :param `subj_attrib_name`: Optional subject attribute name.  Default: 'member'.
+    :param `subj_id_type`: Optional subject ID type.  Default: 'subjectIdentifier'.
 
     Returns the Grouper group that was connected to LDAP.
     """
@@ -37,24 +85,28 @@ def connect_group_to_ldap_source(session, group_name, ldap_base_dn, ldap_group_f
 
 def run_loader_for_group(session, group):
     """
+    Run the Grouper Loader once for a connected group.
+
+    :param `session`: A Grouper session.
+    :param `group`: A grouper group object.
     """
     GrouperLoader.runJobOnceForGroup(session, group)
 
 def edit_group_ldap_source(session, group_name, **kwds):
     """
-    :param:`session`: A Grouper session.
-    :param:`group_name`: A grouper group name.
+    :param `session`: A Grouper session.
+    :param `group_name`: A grouper group name.
    
     Optional Parameters: 
-    :param:`ldap_type`: "LDAP_SIMPLE", etc.
-    :param:`server_id`:
-    :param:`subj_attrib_name`:
-    :param:`subj_id_type`: One of "subjectIdentifier", "subjectId".
-    :param:`ldap_group_filter`: LDAP filter that selects the group.
-    :param:`ldap_base_dn`: LDAP base DN to which filter is applied.
-    :param:`cron`: Quartz cron schedule string (e.g. "0 0 0 * * ?").
-    :param:`error_on_unresolvable_name`: Boolean.
-    :param:`subj_expr_name`: Jexl expression for extracting subject name.
+    :param `ldap_type`: "LDAP_SIMPLE", etc.
+    :param `server_id`:
+    :param `subj_attrib_name`:
+    :param `subj_id_type`: One of "subjectIdentifier", "subjectId".
+    :param `ldap_group_filter`: LDAP filter that selects the group.
+    :param `ldap_base_dn`: LDAP base DN to which filter is applied.
+    :param `cron`: Quartz cron schedule string (e.g. "0 0 0 * * ?").
+    :param `error_on_unresolvable_name`: Boolean.
+    :param `subj_expr_name`: Jexl expression for extracting subject name.
 
     Returns the Grouper group that was connected to LDAP.
     """
