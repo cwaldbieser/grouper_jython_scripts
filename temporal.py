@@ -22,6 +22,7 @@ def makeEphemeral(session, groupName, numDays):
     attribAssign = group.getAttributeDelegate().addAttribute(RuleUtils.ruleAttributeDefName()).getAttributeAssign()
     attribValueDelegate = attribAssign.getAttributeValueDelegate()
     attribValueDelegate.assignValue(RuleUtils.ruleActAsSubjectSourceIdName(), actAs.getSourceId())
+    attribValueDelegate.assignValue(RuleUtils.ruleRunDaemonName(), "F")
     attribValueDelegate.assignValue(RuleUtils.ruleActAsSubjectIdName(), actAs.getId())            
     attribValueDelegate.assignValue(RuleUtils.ruleCheckTypeName(), RuleCheckType.membershipAdd.name())
     attribValueDelegate.assignValue(RuleUtils.ruleIfConditionEnumName(), RuleIfConditionEnum.thisGroupHasImmediateEnabledNoEndDateMembership.name())
@@ -61,4 +62,28 @@ def setMembershipTime(session, groupName, memberName, enable_str=None, expire_st
             return True
     else:
         return False
+
+def trigger_temp_membership(session, intakeGroupName, triggeredGroupName, numDays):
+    """
+    Add a rule to group so that when new members are added to an intake group,
+    they are added to the triggered group for `numDays` days.
+    
+    :param session:`Grouper root session`
+    :param intakeGroupName:`The fully qualified group name for the intake group.`
+    :param triggeredGroupName:`The fully qualified group name for the group that will have a transient membership.`
+    :param numDays:`An integer representing the number of days in the future for new memberships to expire.`
+    """
+    actAs = SubjectFinder.findRootSubject()
+    group = getGroup(session, triggeredGroupName)
+    # Add to triggered group when added to intake.
+    attribAssign = group.getAttributeDelegate().addAttribute(RuleUtils.ruleAttributeDefName()).getAttributeAssign()
+    attribValueDelegate = attribAssign.getAttributeValueDelegate()
+    attribValueDelegate.assignValue(RuleUtils.ruleActAsSubjectSourceIdName(), actAs.getSourceId())
+    attribValueDelegate.assignValue(RuleUtils.ruleRunDaemonName(), "F")
+    attribValueDelegate.assignValue(RuleUtils.ruleActAsSubjectIdName(), actAs.getId())
+    attribValueDelegate.assignValue(RuleUtils.ruleCheckOwnerNameName(), intakeGroupName)
+    attribValueDelegate.assignValue(RuleUtils.ruleCheckTypeName(), RuleCheckType.membershipAdd.name())
+    attribValueDelegate.assignValue(RuleUtils.ruleThenEnumName(), RuleThenEnum.addMemberToOwnerGroup.name())
+    # Make membership transient for triggered group.
+    makeMembersExpire(session, triggeredGroupName, numDays)
 
