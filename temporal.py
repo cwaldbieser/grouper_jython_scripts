@@ -74,7 +74,7 @@ def trigger_temp_membership(session, intakeGroupName, triggeredGroupName, numDay
     :param numDays:`An integer representing the number of days in the future for new memberships to expire.`
     """
     actAs = SubjectFinder.findRootSubject()
-    group = getGroup(session, triggeredGroupName)
+    group = jython_grouper.getGroup(session, triggeredGroupName)
     # Add to triggered group when added to intake.
     attribAssign = group.getAttributeDelegate().addAttribute(RuleUtils.ruleAttributeDefName()).getAttributeAssign()
     attribValueDelegate = attribAssign.getAttributeValueDelegate()
@@ -85,5 +85,5 @@ def trigger_temp_membership(session, intakeGroupName, triggeredGroupName, numDay
     attribValueDelegate.assignValue(RuleUtils.ruleCheckTypeName(), RuleCheckType.membershipAdd.name())
     attribValueDelegate.assignValue(RuleUtils.ruleThenEnumName(), RuleThenEnum.addMemberToOwnerGroup.name())
     # Make membership transient for triggered group.
-    makeMembersExpire(session, triggeredGroupName, numDays)
+    makeEphemeral(session, triggeredGroupName, numDays)
 
