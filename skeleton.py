@@ -1,6 +1,7 @@
 
 from edu.internet2.middleware.grouper.privs import AccessPrivilege
 from jython_grouper import addStem, addGroup, getRootSession, getStem
+from inherit import makeStemInheritable
 
 def createAppSkeleton(session, parent_stem_path, app_extension, app_name=None):
     """
@@ -20,7 +21,15 @@ def createAppSkeleton(session, parent_stem_path, app_extension, app_name=None):
     stem = addStem(session, app_extension, app_name, parentStem=parent_stem)
     etc_stem = addStem(session, "etc", "etc", parentStem=stem)
     export_stem = addStem(session, "exports", "exports", parentStem=stem)
-    group_name = "%s_access_admins" % app_extension
-    admin_group = addGroup(session, etc_stem.name, group_name, group_name)
+    # Set up admin/view groups.
+    admin_group_name = "%s_app_admins" % app_extension
+    admin_group = addGroup(session, etc_stem.name, admin_group_name, admin_group_name)
     admin_group.grantPriv(admin_group.toMember().getSubject(), AccessPrivilege.ADMIN)
-
+    view_group_name = "%s_app_viewers" % app_extension
+    view_group = addGroup(session, etc_stem.name, view_group_name, view_group_name)
+    view_group.grantPriv(view_group.toMember().getSubject(), AccessPrivilege.READ)
+    view_group.grantPriv(admin_group.toMember().getSubject(), AccessPrivilege.ADMIN)
+    admin_group.grantPriv(view_group.toMember().getSubject(), AccessPrivilege.READ)
+    # Child objects should also grant perms to these groups.
+    makeStemInheritable(session, stem.name, admin_group.name, priv='admin')
+    makeStemInheritable(session, stem.name, view_group.name, priv='read')
