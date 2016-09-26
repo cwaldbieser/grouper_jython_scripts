@@ -7,37 +7,45 @@ from edu.internet2.middleware.grouper import SubjectFinder
 from edu.internet2.middleware.grouper.rules import RuleApi
 from jython_grouper import getGroup, getStem
 
-def makeStemInheritable(session, stemName, adminGroupName, priv="admin"):
+def makeStemInheritable(session, stemName, groupName, priv="admin"):
     """
     Make all descendant stems and groups created in a stem have the `priv`
-    permission granted to `adminGroupName`.
+    permission granted to `groupName`.
 
     :param session:`Grouper session`
     :param stemName:`Then name of the stem`
-    :param adminGroupName:`The name of the group that will have the permission on new child objects.`
+    :param groupName:`The name of the group that will have the permission on new child objects.`
     :param priv:`Optional: The privilege to grant.  Default 'admin'.`
     """
-    baseStem = getStem(session, stemName)              
-    adminGroup = getGroup(session, adminGroupName)
-    RuleApi.inheritFolderPrivileges(
-        SubjectFinder.findRootSubject(), 
-        baseStem, 
-        Stem.Scope.SUB, 
-        adminGroup.toSubject(), 
-        Privilege.getInstances("stem, create"))
+    baseStem = getStem(session, stemName)
+    aGroup = getGroup(session, groupName)
     RuleApi.inheritGroupPrivileges(
-        SubjectFinder.findRootSubject(), 
-        baseStem, 
-        Stem.Scope.SUB, 
-        adminGroup.toSubject(), 
-        Privilege.getInstances(priv)) 
+        SubjectFinder.findRootSubject(),
+        baseStem,
+        Stem.Scope.SUB,
+        aGroup.toSubject(),    
+        Privilege.getInstances(priv))
+    RuleApi.runRulesForOwner(baseStem)
+    if priv == 'admin':
+        RuleApi.inheritFolderPrivileges(
+            SubjectFinder.findRootSubject(), 
+            baseStem, 
+            Stem.Scope.SUB, 
+            aGroup.toSubject(),     
+            Privilege.getInstances("stem, create"))
+    RuleApi.runRulesForOwner(baseStem)
+
+def normalizeInheritedPermissions(session, stemName):
+    """
+    Normalize the permissions inherited from a stem.
+    """
+    baseStem = getStem(session, stemName)
     RuleApi.reassignGroupPrivilegesIfFromGroup(
-        SubjectFinder.findRootSubject(), 
-        baseStem, 
+        SubjectFinder.findRootSubject(),
+        baseStem,
         Stem.Scope.SUB)
     RuleApi.reassignStemPrivilegesIfFromGroup(
         SubjectFinder.findRootSubject(), 
         baseStem, 
         Stem.Scope.SUB) 
-
-
+    RuleApi.runRulesForOwner(baseStem)
