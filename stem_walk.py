@@ -12,7 +12,7 @@ def walk_stems(session, stem):
     (stem, sub_stems, groups).
     """
     if isinstance(stem, basestring):
-        stem = getStem(session, stem_name)
+        stem = getStem(session, stem)
     child_stems = tuple(stem.getChildStems())
     groups = tuple(stem.getChildGroups())
     for child_stem in child_stems:
