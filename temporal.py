@@ -40,7 +40,7 @@ def setMembershipTime(session, groupName, memberName, enable_str=None, expire_st
     :param enable_str:`The enable date/time in yyyy-mm-dd HH:MM:SS format`
     :param expire_str:`The expiration date/time in yyyy-mm-dd HH:MM:SS format`
     """
-    sdf = SimpleDateFormat("yyy-MM-dd HH:mm:ss")
+    sdf = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     if enable_str is not None:
         ts = sdf.parse(enable_str)
         enable_millis = ts.getTime()
