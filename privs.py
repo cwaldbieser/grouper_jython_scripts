@@ -1,8 +1,7 @@
 
-#export CLASSPATH=/opt/jyson-1.0.2/lib/jyson-1.0.2.jar
-
 from edu.internet2.middleware.grouper.privs import Privilege
 from jython_grouper import getGroup, getStem
+import stem_walk
 
 def revokeGroupPrivByPredicate(session, groupName, predicate, privName="admin"):
     """
@@ -93,3 +92,33 @@ def makeSubjectSourceIdPredicate(subjectSourceId):
         return subject.sourceId == subjectSourceId
     
     return _predicate
+
+def chmod_groups(session, stem, perms, recursive=True):
+    """
+    Assign permissions to all groups in a folder.
+    Recurses into subfolders by default.
+
+    `perms` should be a mapping of groups whose members will be granted
+    permissions to a list of permissions that will be granted on each 
+    group encountered.
+
+    E.g.
+
+    {'ref:frotz:etc:Admins': ['update', 'read']} will grant the "read" 
+    and "update" privilege to the "Admins" group on every group traversed
+    by this function.
+    """
+    resolved_perms = []
+    for gname, perm_names in perms.items():
+        g = getGroup(session, gname)
+        privs = []
+        for perm_name in perm_names:
+            priv = list(Privilege.getInstances(perm_name))[0]
+            privs.append(priv)
+        resolved_perms.append((g, privs))
+    for stem, sub_stems, groups in stem_walk.walk_stems(session, stem):
+        for g in groups:
+            for grantee, privs in resolved_perms:
+                for priv in privs:
+                    g.grantPriv(grantee.toSubject(), priv, False)
+
