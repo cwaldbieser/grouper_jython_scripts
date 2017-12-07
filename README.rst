@@ -2,6 +2,7 @@
 Grouper Scripts 
 ===============
 
+These scripts depend on the Grouper Shell Wrappers Jython REPL (see https://github.com/cwaldbieser/grouper_shell_wrappers).
 These scripts work with the Jython wrapper script from GSH (:file:`jython_grouper.py`).
 
 * `events.py`: Trigger additional actions based on events.
@@ -12,3 +13,4 @@ These scripts work with the Jython wrapper script from GSH (:file:`jython_groupe
 * `stem_walk.py`: Recursively traverse stems.
 * `subj_memberships.py`: Inspect, copy, manipulate memberships for subjects.
 * `temporal.py`: Assign start/end dates to groups.
+
